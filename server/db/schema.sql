@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   name          VARCHAR(100) NOT NULL,
   email         VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
+  is_admin      INTEGER NOT NULL DEFAULT 0,  -- 1 = can use /api/admin/*
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

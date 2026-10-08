@@ -11,6 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
 
 const ROOT = path.join(__dirname, '..');
 const dbFile = path.resolve(ROOT, process.env.DB_FILE || './data/movie_rental.db');
@@ -34,9 +35,19 @@ for (const [col, type] of [
 ]) {
   if (!movieCols.includes(col)) db.exec(`ALTER TABLE movies ADD COLUMN ${col} ${type}`);
 }
+const userCols = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name);
+if (!userCols.includes('is_admin')) db.exec('ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0');
 if (db.prepare('SELECT COUNT(*) AS n FROM movies').get().n === 0) {
   db.exec(fs.readFileSync(path.join(ROOT, 'db/seed.sql'), 'utf8'));
   console.log('[db] seeded sample movies');
+}
+
+// Seed one admin account if it doesn't exist yet (demo credentials — change them, see README "Admin").
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@movierental.local').toLowerCase();
+if (!db.prepare('SELECT id FROM users WHERE email = ?').get(ADMIN_EMAIL)) {
+  const hash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10);
+  db.prepare('INSERT INTO users (name, email, password_hash, is_admin) VALUES (?, ?, ?, 1)').run('Admin', ADMIN_EMAIL, hash);
+  console.log(`[db] seeded admin user ${ADMIN_EMAIL}`);
 }
 
 // SQL snippets that differ between SQLite and MySQL. Timestamps are UTC 'YYYY-MM-DD HH:MM:SS'.

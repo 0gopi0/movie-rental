@@ -6,7 +6,7 @@ const { requireAuth } = require('../middleware/auth');
 
 const sign = (user) =>
   jwt.sign({ sub: String(user.id), email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
-const publicUser = (u) => ({ id: u.id, name: u.name, email: u.email });
+const publicUser = (u) => ({ id: u.id, name: u.name, email: u.email, isAdmin: !!u.is_admin });
 
 router.post('/register', async (req, res) => {
   const name = String(req.body?.name || '').trim();
@@ -35,7 +35,7 @@ router.post('/login', async (req, res) => {
 });
 
 router.get('/me', requireAuth, (req, res) => {
-  const user = get('SELECT id, name, email FROM users WHERE id = ?', [req.user.id]);
+  const user = get('SELECT id, name, email, is_admin FROM users WHERE id = ?', [req.user.id]);
   if (!user) return res.status(401).json({ error: 'User no longer exists' });
   res.json({ user: publicUser(user) });
 });

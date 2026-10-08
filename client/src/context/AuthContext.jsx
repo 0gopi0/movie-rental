@@ -21,6 +21,7 @@ export function AuthProvider({ children }) {
     setToken(token);
     setTok(token);
     setUser(user);
+    return user;
   }
 
   const login = async (email, password) => saveSession(await api('/auth/login', { method: 'POST', body: { email, password } }));

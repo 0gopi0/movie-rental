@@ -8,6 +8,12 @@ import Register from './pages/Register.jsx';
 import Checkout from './pages/Checkout.jsx';
 import Player from './pages/Player.jsx';
 import MyRentals from './pages/MyRentals.jsx';
+import AdminRoute from './components/AdminRoute.jsx';
+import AdminLayout from './pages/admin/AdminLayout.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AdminMovies from './pages/admin/AdminMovies.jsx';
+import AdminMovieForm from './pages/admin/AdminMovieForm.jsx';
+import AdminSales from './pages/admin/AdminSales.jsx';
 
 export default function App() {
   return (
@@ -23,13 +29,23 @@ export default function App() {
           <Route path="/checkout/:movieId" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
           <Route path="/watch/:movieId" element={<ProtectedRoute><Player /></ProtectedRoute>} />
           <Route path="/rentals" element={<ProtectedRoute><MyRentals /></ProtectedRoute>} />
+          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="movies" element={<AdminMovies />} />
+            <Route path="movies/new" element={<AdminMovieForm />} />
+            <Route path="movies/:id/edit" element={<AdminMovieForm />} />
+            <Route path="sales" element={<AdminSales />} />
+          </Route>
           <Route path="*" element={<p className="muted">Page not found.</p>} />
         </Routes>
       </main>
       <footer className="site-footer">
-        Posters via <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">TMDB</a>
-        {' · '}Trailers via YouTube (T-Series){' · '}Full films not included in prototype
-        <span className="small">This product uses the TMDB API but is not endorsed or certified by TMDB.</span>
+        <p className="footer-credits">
+          <span>Posters via <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">TMDB</a></span>
+          <span>Trailers via YouTube (T-Series)</span>
+          <span>Full films not included in prototype</span>
+        </p>
+        <p className="small">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       </footer>
     </>
   );

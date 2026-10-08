@@ -20,8 +20,9 @@ export default function Login() {
     setBusy(true);
     setError('');
     try {
-      await login(email, password);
-      navigate(next, { replace: true });
+      const user = await login(email, password);
+      // Admins with no specific destination land on the dashboard.
+      navigate(user?.isAdmin && !params.get('next') ? '/admin' : next, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

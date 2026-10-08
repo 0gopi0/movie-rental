@@ -30,6 +30,7 @@ export default function Navbar() {
         {user ? (
           <>
             <NavLink to="/rentals">My Rentals</NavLink>
+            {user.isAdmin && <NavLink to="/admin">Admin</NavLink>}
             <span className="nav-user" title={user.email}>
               <span className="avatar" aria-hidden="true">{user.name?.[0]?.toUpperCase() || '?'}</span>
               <span className="nav-user-name">{user.name}</span>

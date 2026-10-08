@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { all, get } = require('../db');
 const { optionalAuth } = require('../middleware/auth');
+const { posterFallbackUrl } = require('../services/poster.service');
 const { getActiveRental, serializeRental } = require('../services/rental.service');
 
 // video_path is deliberately never selected/sent to the client.
@@ -9,7 +10,7 @@ const toMovie = (m) => ({
   title: m.title,
   description: m.description,
   posterUrl: m.poster_url,
-  posterFallbackUrl: `/api/posters/${m.id}.svg`, // local SVG if the TMDB image fails to load
+  posterFallbackUrl: posterFallbackUrl(m.id), // local SVG if the TMDB image fails to load
   durationMin: m.duration_min,
   priceCents: m.price_cents,
   currency: m.currency,

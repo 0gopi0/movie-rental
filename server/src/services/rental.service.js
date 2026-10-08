@@ -1,4 +1,5 @@
 const { get, all, run, NOW_SQL, PLUS_24H_SQL, toIso } = require('../db');
+const { posterFallbackUrl } = require('./poster.service');
 
 // Access rule: user can play iff a rental with expires_at in the future exists.
 function getActiveRental(userId, movieId) {
@@ -37,7 +38,7 @@ function listRentals(userId) {
     movieId: r.movie_id,
     title: r.title,
     posterUrl: r.poster_url,
-    posterFallbackUrl: `/api/posters/${r.movie_id}.svg`,
+    posterFallbackUrl: posterFallbackUrl(r.movie_id),
     startsAt: toIso(r.starts_at),
     expiresAt: toIso(r.expires_at),
     active: !!r.active,

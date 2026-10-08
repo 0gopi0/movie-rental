@@ -22,6 +22,7 @@ app.use('/api/movies', require('./routes/movies.routes'));
 app.use('/api/payments', require('./routes/payments.routes'));
 app.use('/api/rentals', require('./routes/rentals.routes'));
 app.use('/api/stream', require('./routes/stream.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
 
 app.use('/api', notFound);
 app.use(errorHandler);

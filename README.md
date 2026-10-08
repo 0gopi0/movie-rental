@@ -207,16 +207,47 @@ To add or swap a clip, put an MP4 in `server/public/videos/` and update `movies.
 Re-encode with `-movflags +faststart` so playback starts before the whole file loads. If a file is missing, the stream
 endpoint returns 404 with the expected path.
 
+## Admin dashboard
+
+On first start the server creates one admin account:
+
+| Email | Password |
+|---|---|
+| `admin@movierental.local` | `admin123` |
+
+> **Change this before sharing the app.** These demo credentials are public in this README. To use different ones, set
+> `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `server/.env` **before the first start** (or before `npm run db:reset`). The seed only
+> creates the account if that email doesn't exist yet. It never changes the password of an existing account.
+
+Log in at `/login`. Admins go straight to **/admin**, and the navbar also shows an **Admin** link.
+- **Dashboard** (`/admin`) has stat cards (total revenue from succeeded payments, rentals today, active rentals now,
+  movies, users), a CSS bar list of revenue for the last 7 days, and the latest 10 rentals.
+- **Movies** (`/admin/movies`) lists every movie with its rental counts. Here you can add a movie (`/admin/movies/new`, with a live poster preview),
+  edit one, or delete one (after a confirm). Price is entered in ₹ and stored in paise. The video file is picked from `server/public/videos/`.
+- **Sales** (`/admin/sales`) shows rentals filtered by All, Active or Expired, with the revenue and count for that filter.
+
+How it works:
+- `users.is_admin` (0/1). Older DBs get the column added on boot automatically, so you don't need a reset.
+- `requireAdmin` middleware re-reads `is_admin` from the DB on every request, so removing admin rights takes effect
+  immediately. The `/admin` route in the client sends logged-out users to login and everyone else who isn't an admin to `/`. The API is the
+  real gate: it returns 401 when you're not logged in and 403 when you aren't an admin.
+- Endpoints (all admin only): `GET /api/admin/stats`, `GET /api/admin/rentals?status=all|active|expired`,
+  `GET|POST /api/admin/movies`, `GET|PUT|DELETE /api/admin/movies/:id`.
+- **Delete rules:** returns 409 if the movie has an active rental. It also returns 409 if the movie has any past rentals,
+  because deleting it would erase revenue history. A movie with only failed or declined payment attempts can be deleted.
+- "Today" and the 7 day chart use **UTC** days, because timestamps are stored in UTC.
+- New movies have no local SVG fallback poster. If the poster URL is empty or broken, a neutral placeholder is shown.
+
 ## Layout
 
 ```
 server/  Express API: src/{index,db}.js, routes/, services/, middleware/; db/*.sql; public/{videos,posters}
-client/  Vite React app: src/{api,context,components,pages}, styles.css; vite.config.js proxies /api to :4100
+client/  Vite React app: src/{api,context,components,pages,pages/admin}, styles.css; vite.config.js proxies /api to :4100
 ```
 
 ## Not done / next steps
 
-- Out of scope per PLAN.md: real payment gateway and webhooks, httpOnly-cookie or refresh-token auth, HLS/DRM, admin panel, search, rate limiting, deployment.
+- Out of scope per PLAN.md: real payment gateway and webhooks, httpOnly-cookie or refresh-token auth, HLS/DRM, search, rate limiting, deployment.
 - A declined payment leaves a `failed` row in `payments`, which is expected. If two checkouts race and the gateway succeeds for both, the second payment is marked `failed` instead of being refunded. A real gateway would need a void or refund here.
 - The 24h window starts at payment time. PLAN.md lists "start on first play" as an optional later change.
 - There are no automated tests yet. The API flow was checked by hand with curl (see the demo script).

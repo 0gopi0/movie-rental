@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { get } = require('../db');
 
 function readToken(req) {
   const h = req.headers.authorization || '';
@@ -34,4 +35,11 @@ function optionalAuth(req, _res, next) {
   next();
 }
 
-module.exports = { requireAuth, optionalAuth };
+// Use after requireAuth. Reads is_admin from the DB (not the JWT) so revoking admin takes effect immediately.
+function requireAdmin(req, res, next) {
+  const row = get('SELECT is_admin FROM users WHERE id = ?', [req.user.id]);
+  if (!row?.is_admin) return res.status(403).json({ error: 'Admin only' });
+  next();
+}
+
+module.exports = { requireAuth, optionalAuth, requireAdmin };
