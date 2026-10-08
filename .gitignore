@@ -1,0 +1,15 @@
+# Dependencies
+server/node_modules/
+client/node_modules/
+client/dist/
+
+# Local env (dev secrets) — copy from .env.example instead
+server/.env
+client/.env
+
+# Local SQLite database (auto-created + seeded on first boot)
+server/data/
+
+# Logs / OS
+*.log
+.DS_Store
