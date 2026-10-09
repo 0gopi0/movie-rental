@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS movies (
   year          INTEGER,                    -- release year
   trailer_youtube_id VARCHAR(20),           -- official trailer, embedded via youtube-nocookie
   tmdb_id       INTEGER,                    -- themoviedb.org id (poster/metadata source), nullable
+  status        TEXT NOT NULL DEFAULT 'archived' CHECK (status IN ('now','upcoming','archived')),
+                                            -- single-film model: exactly one 'now', at most one 'upcoming'
+  release_date  TEXT,                       -- YYYY-MM-DD, required when status = 'upcoming'
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

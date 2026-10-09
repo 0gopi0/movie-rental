@@ -26,6 +26,8 @@ CREATE TABLE movies (
   year          INT,                        -- release year
   trailer_youtube_id VARCHAR(20),           -- official trailer, embedded via youtube-nocookie
   tmdb_id       INT NULL,                   -- themoviedb.org id (poster/metadata source)
+  status        VARCHAR(10) NOT NULL DEFAULT 'archived',  -- single-film model: one 'now', at most one 'upcoming'
+  release_date  DATE NULL,                  -- required when status = 'upcoming'
   created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

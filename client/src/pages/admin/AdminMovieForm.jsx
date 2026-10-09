@@ -5,6 +5,7 @@ import { api } from '../../api/client.js';
 const EMPTY = {
   title: '', year: '', genre: '', durationMin: '', priceInr: '', description: '',
   posterUrl: '', trailerYoutubeId: '', videoPath: '', rating: '',
+  status: 'archived', releaseDate: '',
 };
 
 // API movie -> form strings (price shown in rupees, stored in paise).
@@ -19,6 +20,8 @@ const toForm = (m) => ({
   trailerYoutubeId: m.trailerYoutubeId || '',
   videoPath: m.videoPath || '',
   rating: m.rating ?? '',
+  status: m.status || 'archived',
+  releaseDate: m.releaseDate || '',
 });
 
 export default function AdminMovieForm() {
@@ -73,6 +76,23 @@ export default function AdminMovieForm() {
         <div className="admin-form-fields">
           {error && <p className="error" role="alert">{error}</p>}
           <label>Title *<input value={form.title} onChange={set('title')} required maxLength={200} autoFocus={!editing} /></label>
+          <div className="row">
+            <label>
+              Spotlight slot *
+              <select value={form.status} onChange={set('status')} required>
+                <option value="now">Now showing — this month's rental</option>
+                <option value="upcoming">Coming next — teaser with release date</option>
+                <option value="archived">Archived — hidden from homepage</option>
+              </select>
+            </label>
+            <label>
+              Release date{form.status === 'upcoming' ? ' *' : ''}
+              <input type="date" value={form.releaseDate} onChange={set('releaseDate')} required={form.status === 'upcoming'} />
+            </label>
+          </div>
+          {form.status === 'now' && (
+            <p className="small">Saving as “Now showing” moves the current feature to Archived automatically.</p>
+          )}
           <div className="row">
             <label>Year<input type="number" min="1888" max="2100" value={form.year} onChange={set('year')} /></label>
             <label>Duration (min)<input type="number" min="1" max="600" value={form.durationMin} onChange={set('durationMin')} /></label>

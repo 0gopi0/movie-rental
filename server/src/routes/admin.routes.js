@@ -87,6 +87,8 @@ const toAdminMovie = (m) => ({
   rating: m.rating,
   year: m.year,
   trailerYoutubeId: m.trailer_youtube_id,
+  status: m.status || 'archived', // 'now' | 'upcoming' | 'archived'
+  releaseDate: m.release_date || null,
   activeRentals: m.active_rentals ?? 0,
   totalRentals: m.total_rentals ?? 0,
 });
@@ -124,6 +126,18 @@ function parseMovie(b = {}) {
   const trailer = str(b.trailerYoutubeId);
   if (trailer && !/^[\w-]{11}$/.test(trailer)) throw bad('Trailer must be an 11-character YouTube video ID');
 
+  // Single-film model: 'now' = current feature, 'upcoming' = next teaser (needs a release date).
+  const status = str(b.status) || 'archived';
+  if (!['now', 'upcoming', 'archived'].includes(status)) throw bad("Status must be 'now', 'upcoming' or 'archived'");
+  const releaseDate = str(b.releaseDate);
+  if (status === 'upcoming') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(releaseDate)) throw bad('Upcoming movie needs a release date (YYYY-MM-DD)');
+    const d = new Date(releaseDate + 'T00:00:00Z');
+    if (Number.isNaN(d.getTime())) throw bad('Release date is not a real date');
+  } else if (releaseDate && !/^\d{4}-\d{2}-\d{2}$/.test(releaseDate)) {
+    throw bad('Release date must be YYYY-MM-DD');
+  }
+
   const videoPath = str(b.videoPath);
   const resolved = path.resolve(PUBLIC_DIR, videoPath);
   if (!videoPath || !resolved.startsWith(PUBLIC_DIR + path.sep)) throw bad('Video path is required (e.g. videos/sintel-trailer.mp4)');
@@ -140,8 +154,35 @@ function parseMovie(b = {}) {
     rating: optNum(b.rating, 'Rating', { min: 0, max: 10 }),
     year: optNum(b.year, 'Year', { min: 1888, max: 2100, int: true }),
     trailer_youtube_id: trailer || null,
+    status,
+    release_date: releaseDate || null,
   };
 }
+
+// Single-film model: setting one movie to 'now' (or 'upcoming') demotes the
+// previous holder of that slot to 'archived'. Runs inside the caller's tx.
+function applySpotlightSlot(id, status) {
+  if (status === 'now') {
+    run("UPDATE movies SET status = 'archived' WHERE status = 'now' AND id != ?", [id]);
+  } else if (status === 'upcoming') {
+    run("UPDATE movies SET status = 'archived' WHERE status = 'upcoming' AND id != ?", [id]);
+  }
+}
+
+// POST /api/admin/movies/rotate — monthly swap: archive the current 'now'
+// feature and promote the 'upcoming' teaser into its slot.
+// 404 when there is no upcoming movie to promote.
+// NOTE: must be defined BEFORE /movies/:id routes, or 'rotate' matches :id.
+router.post('/movies/rotate', (_req, res) => {
+  const next = get("SELECT id FROM movies WHERE status = 'upcoming' ORDER BY release_date, id LIMIT 1");
+  if (!next) return res.status(404).json({ error: 'No upcoming movie to rotate in. Add one first.' });
+  const out = tx(() => {
+    run("UPDATE movies SET status = 'archived', release_date = NULL WHERE status = 'now'");
+    run("UPDATE movies SET status = 'now', release_date = NULL WHERE id = ?", [next.id]);
+    return toAdminMovie(get(`${MOVIE_SELECT} WHERE m.id = ?`, [next.id]));
+  });
+  res.json({ movie: out });
+});
 
 router.get('/movies', (_req, res) => {
   res.json({ movies: all(`${MOVIE_SELECT} ORDER BY m.id DESC`).map(toAdminMovie), videos: listVideos() });
@@ -155,21 +196,30 @@ router.get('/movies/:id', (req, res) => {
 
 router.post('/movies', (req, res) => {
   const v = parseMovie(req.body);
-  const cols = Object.keys(v);
-  const { lastInsertRowid } = run(
-    `INSERT INTO movies (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
-    cols.map((c) => v[c])
-  );
-  res.status(201).json({ movie: toAdminMovie(get(`${MOVIE_SELECT} WHERE m.id = ?`, [lastInsertRowid])) });
+  const out = tx(() => {
+    const cols = Object.keys(v);
+    const { lastInsertRowid } = run(
+      `INSERT INTO movies (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
+      cols.map((c) => v[c])
+    );
+    const id = Number(lastInsertRowid);
+    applySpotlightSlot(id, v.status);
+    return toAdminMovie(get(`${MOVIE_SELECT} WHERE m.id = ?`, [id]));
+  });
+  res.status(201).json({ movie: out });
 });
 
 router.put('/movies/:id', (req, res) => {
   const id = Number(req.params.id);
   if (!get('SELECT id FROM movies WHERE id = ?', [id])) return res.status(404).json({ error: 'Movie not found' });
   const v = parseMovie(req.body);
-  const cols = Object.keys(v);
-  run(`UPDATE movies SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, [...cols.map((c) => v[c]), id]);
-  res.json({ movie: toAdminMovie(get(`${MOVIE_SELECT} WHERE m.id = ?`, [id])) });
+  const out = tx(() => {
+    const cols = Object.keys(v);
+    run(`UPDATE movies SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, [...cols.map((c) => v[c]), id]);
+    applySpotlightSlot(id, v.status);
+    return toAdminMovie(get(`${MOVIE_SELECT} WHERE m.id = ?`, [id]));
+  });
+  res.json({ movie: out });
 });
 
 // DELETE is blocked (409) while anyone is renting it. Movies with past rentals are also kept (409),

@@ -32,6 +32,8 @@ for (const [col, type] of [
   ['year', 'INTEGER'],
   ['trailer_youtube_id', 'VARCHAR(20)'],
   ['tmdb_id', 'INTEGER'],
+  ['status', "TEXT NOT NULL DEFAULT 'archived'"],
+  ['release_date', 'TEXT'],
 ]) {
   if (!movieCols.includes(col)) db.exec(`ALTER TABLE movies ADD COLUMN ${col} ${type}`);
 }

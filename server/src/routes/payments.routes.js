@@ -11,10 +11,13 @@ router.post('/checkout', requireAuth, async (req, res) => {
   const movieId = Number(req.body?.movieId);
   const card = req.body?.card || {};
 
-  // 1. Movie exists + no active rental; insert pending payment (atomic).
+  // 1. Movie exists, is the current feature (not an upcoming teaser), + no active rental; insert pending payment (atomic).
   const pre = tx(() => {
-    const movie = get('SELECT id, price_cents, currency FROM movies WHERE id = ?', [movieId]);
+    const movie = get('SELECT id, price_cents, currency, status FROM movies WHERE id = ?', [movieId]);
     if (!movie) return { status: 404, body: { error: 'Movie not found' } };
+    if (movie.status !== 'now') {
+      return { status: 403, body: { error: 'This movie is not available for rent yet' } };
+    }
     const existing = getActiveRental(userId, movieId);
     if (existing) {
       return { status: 409, body: { error: 'You already have an active rental for this movie', rental: serializeRental(existing) } };

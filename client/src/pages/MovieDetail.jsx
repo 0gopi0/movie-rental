@@ -39,8 +39,16 @@ export default function MovieDetail() {
   const rental = movie.rental;
   const rented = Boolean(user && rental?.active);
   const price = formatPrice(movie.priceCents, movie.currency);
+  const isUpcoming = movie.status === 'upcoming';
   let cta;
-  if (!user) {
+  if (isUpcoming) {
+    // Teaser only: no rent/checkout until it becomes the 'now' feature.
+    cta = (
+      <span className="btn btn-lg btn-block btn-disabled" aria-disabled="true" title="Available on release">
+        Coming {movie.releaseDate ? new Date(movie.releaseDate + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : 'soon'} · {price}
+      </span>
+    );
+  } else if (!user) {
     cta = <Link className="btn btn-lg btn-block" to={`/login?next=${encodeURIComponent(`/movies/${id}`)}`}>Login to rent · {price}</Link>;
   } else if (rented) {
     cta = <Link className="btn btn-lg btn-block" to={`/watch/${id}`}>▶ Play preview clip</Link>;

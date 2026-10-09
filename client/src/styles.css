@@ -108,6 +108,20 @@ h2 { margin: 2rem 0 .75rem; font-size: 1.1rem; color: var(--muted); font-weight:
 
 .section-title { margin: 2.25rem 0 var(--s-4); color: var(--text); font-size: 1.25rem; font-weight: 800; }
 
+/* ---------- Single-film homepage: one hero + one upcoming teaser ---------- */
+.upcoming {
+  display: grid; grid-template-columns: 150px 1fr; gap: clamp(1rem, 3vw, 2rem); align-items: center;
+  padding: clamp(1rem, 3vw, 1.75rem); border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--bg-raised); box-shadow: inset 0 0 0 1px #38bdf81f;
+}
+.upcoming-poster { width: 150px; aspect-ratio: 2/3; border-radius: var(--radius); object-fit: cover; box-shadow: var(--shadow), 0 0 0 1px #38bdf833; }
+.upcoming-title { margin: .25rem 0 .25rem; font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 900; letter-spacing: -.02em; }
+.upcoming-countdown { display: inline-block; margin: .5rem 0 1rem; padding: .25rem .8rem; border-radius: 999px; background: #ffb0201a; border: 1px solid #ffb02044; color: var(--warn); font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) {
+  .upcoming { grid-template-columns: 110px 1fr; }
+  .upcoming-poster { width: 110px; }
+}
+
 /* ---------- Home carousels ----------
    Native horizontal scroll (touch swipe, trackpad) + scroll-snap; arrows page by ~one screen.
    --per-view sets how many cards fit across; fractional values leave a peek of the next card. */
@@ -297,6 +311,8 @@ h2 { margin: 2rem 0 .75rem; font-size: 1.1rem; color: var(--muted); font-weight:
 .admin-movie img { width: 40px; aspect-ratio: 2/3; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: var(--bg); }
 .status { display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 800; white-space: nowrap; }
 .status-active { background: #2ecc7126; color: #5ee69a; border: 1px solid #2ecc7155; }
+.status-upcoming { background: #ffb0201a; color: var(--warn); border: 1px solid #ffb02055; }
+.btn-disabled, .btn-disabled:hover { opacity: .65; cursor: not-allowed; }
 .status-expired { background: #ffffff0f; color: var(--muted); border: 1px solid var(--border); }
 .row-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
 .btn-danger { background: transparent; color: var(--error); border: 1px solid #ff6b6b66; }

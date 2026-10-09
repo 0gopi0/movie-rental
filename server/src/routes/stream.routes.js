@@ -12,6 +12,9 @@ const MAX_STREAM_TOKEN_SEC = 2 * 60 * 60;
 // GET /api/stream/:movieId/token — short-lived token for the <video> src (can't send headers).
 router.get('/:movieId/token', requireAuth, (req, res) => {
   const movieId = Number(req.params.movieId);
+  const movie = get('SELECT status FROM movies WHERE id = ?', [movieId]);
+  if (!movie) return res.status(404).json({ error: 'Movie not found' });
+  if (movie.status !== 'now') return res.status(403).json({ error: 'This movie is not available yet' });
   const rental = getActiveRental(req.user.id, movieId);
   if (!rental) return res.status(403).json({ error: 'No active rental', code: 'rental_expired' });
   const remainingSec = Math.floor((Date.parse(toIso(rental.expires_at)) - Date.now()) / 1000);
